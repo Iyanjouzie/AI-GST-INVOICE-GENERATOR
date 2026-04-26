@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GST Invoice Generator</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="container">
+  <div class="header-strip">
+    <h1>🧾 GST Invoice Generator</h1>
+    <p class="subtitle">Fill in the details below to generate your invoice instantly</p>
+  </div>
+
+  <form action="/generate" method="post" id="invoiceForm">
+
+    <div class="section">
+      <label>Customer Name</label>
+      <input type="text" name="name" placeholder="e.g. Ravi Kumar" required>
+    </div>
+
+    <div class="section">
+      <label>Language</label>
+      <select name="language">
+        <option value="en">🇬🇧 English</option>
+        <option value="hi">🇮🇳 Hindi</option>
+        <option value="ta">தமிழ் Tamil</option>
+        <option value="te">తెలుగు Telugu</option>
+        <option value="ml">മലയാളം Malayalam</option>
+        <option value="kn">ಕನ್ನಡ Kannada</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <label>GST %</label>
+      <input type="number" name="gst" placeholder="e.g. 18" min="0" max="100" step="0.01" required>
+    </div>
+
+    <div class="section">
+      <div class="products-header">
+        <label>Products / Services</label>
+        <button type="button" class="btn-add" onclick="addProduct()">+ Add Item</button>
+      </div>
+
+      <div id="products">
+        <!-- rows injected by JS -->
+      </div>
+    </div>
+
+    <div class="summary-bar" id="summaryBar" style="display:none">
+      <span id="summaryText"></span>
+    </div>
+
+    <button type="submit" class="btn-submit">⬇ Generate Invoice PDF</button>
+
+  </form>
+</div>
+
+<script>
+let rowCount = 0;
+
+function addProduct() {
+  rowCount++;
+  const container = document.getElementById('products');
+  const div = document.createElement('div');
+  div.className = 'product-box';
+  div.id = `row_${rowCount}`;
+  div.innerHTML = `
+    <span class="row-num">${rowCount}</span>
+    <input type="text" name="product" placeholder="Item / Service name" required>
+    <input type="number" name="amount" placeholder="Amount (₹)" min="0" step="0.01"
+           required oninput="updateSummary()">
+    <button type="button" class="btn-remove" onclick="removeRow('row_${rowCount}')">✕</button>
+  `;
+  container.appendChild(div);
+  div.querySelector('input[type=text]').focus();
+  updateSummary();
+}
+
+function removeRow(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+  updateSummary();
+}
+
+function updateSummary() {
+  const amounts = document.querySelectorAll('input[name="amount"]');
+  let total = 0;
+  amounts.forEach(a => { total += parseFloat(a.value) || 0; });
+  const bar = document.getElementById('summaryBar');
+  if (amounts.length > 0) {
+    const gst = parseFloat(document.querySelector('input[name="gst"]')?.value) || 0;
+    const gstAmt = (total * gst / 100);
+    document.getElementById('summaryText').textContent =
+      `Subtotal: ₹${total.toFixed(2)}  |  GST (${gst}%): ₹${gstAmt.toFixed(2)}  |  Total: ₹${(total+gstAmt).toFixed(2)}`;
+    bar.style.display = 'block';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+document.querySelector('input[name="gst"]')?.addEventListener('input', updateSummary);
+
+// Start with one empty row
+addProduct();
+</script>
+
+</body>
+</html>
